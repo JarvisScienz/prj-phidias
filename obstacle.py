@@ -9,22 +9,16 @@ from PyQt5.QtGui import QPainter, QColor, QFont, QPixmap, QTransform
 from PyQt5.QtCore import Qt, QTimer
 from pose import *
 
-COLOR_MAP = { 'black' : QColor(0,0,0),
-              'red' : QColor(255,0,0),
-              'green' : QColor(0,255,0),
-              'blue' : QColor(0,0,255) }
-
-class Block:
+class Obstacle:
 
     WIDTH = 0.01 #0.03
     HEIGHT = 0.01 #0.02
     GAP = 0.01
 
-    def __init__(self, uColor):
-        self.__color = uColor
+    def __init__(self, width, height):
         self.__pose = Pose()
-        self.__w = Pose.pixel_scale(Block.WIDTH)
-        self.__h = Pose.pixel_scale(Block.HEIGHT)
+        self.__w = Pose.pixel_scale(width)
+        self.__h = Pose.pixel_scale(height)
 
     def get_pose(self):
         return self.__pose.get_pose()
@@ -37,7 +31,7 @@ class Block:
 
     def paint(self, qp):
         qp.setPen(Qt.black)
-        qp.setBrush(COLOR_MAP[self.__color])
+        qp.setBrush(QColor(0,0,0))
 
         (x, y) = self.__pose.to_pixel()
 

@@ -4,6 +4,8 @@
 import math
 
 from block import *
+from obstacle import *
+from container import *
 
 class World:
 
@@ -11,6 +13,8 @@ class World:
 
     def __init__(self, ui):
         self.__blocks = [ ]
+        self.__obstacles = [ ]
+        self.__containers = [ ]
         self.ui = ui
 
     def new_block(self, uColor, uX):
@@ -18,12 +22,18 @@ class World:
         b.set_pose(uX, World.FLOOR_LEVEL, 0)
         self.__blocks.append(b)
 
-    def new_obstacle(self, uX, uY):
-        obstacle = Block('black')
+    def new_container(self, uColor, uX):
+        c = Container(uColor)
+        c.set_pose(uX, World.FLOOR_LEVEL, 0)
+        self.__containers.append(c)
+
+    def new_obstacle(self, uX, uY, width, height):
+        obstacle = Obstacle(width, height)
         obstacle.set_pose(uX, uY, 0)
-        self.__blocks.append(obstacle)
+        self.__obstacles.append(obstacle)
 
     def count_blocks(self):
+        #print(len(self.__blocks))
         return len(self.__blocks)
 
     def floor_position_busy(self, uX):
@@ -62,6 +72,10 @@ class World:
     def paint(self, qp):
         for b in self.__blocks:
             b.paint(qp)
+        for o in self.__obstacles:
+            o.paint(qp)
+        for c in self.__containers:
+            c.paint(qp)
         qp.setPen(QColor(217,95,14))
         y = Pose.xy_to_pixel(0, World.FLOOR_LEVEL)[1]
         qp.drawLine(50, y, 900, y)

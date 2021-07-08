@@ -26,9 +26,10 @@ COLOR_NAMES = [ 'red',
                 'green',                
                 'blue' ]
 
-POSITIONS = [ 0.04, 0.06, 0.08, 0.1, 0.12, 0.14, 0.16, 0.18, 0.2, 0.22 ]
-OBSTACLE_POSITIONS_X = [ 0.04, 0.14, 0.08 ]
-OBSTACLE_POSITIONS_Y = [ 0.02, -0.01, 0.02 ]
+POSITIONS = [ 0.005, 0.015, 0.025, 0.035, 0.045, 0.135, 0.145, 0.155, 0.165, 0.175 ]
+OBSTACLE_POSITIONS_X = [ 0.055, 0.125 ]
+OBSTACLE_POSITIONS_Y = [ -0.05, -0.05 ]
+CONTAINER_POSITIONS = [ 0.065, 0.085, 0.105 ]
 
 
 class MainWindow(QWidget):
@@ -58,8 +59,8 @@ class MainWindow(QWidget):
         self.arm = ThreeJointsArm(self.trajectory, self.use_profile)
         self.painter = ThreeJointsArmPainter(self.arm)
 
-        target_x = 0.1
-        target_y = 0.05
+        target_x = 0.03
+        target_y = 0.07
         target_alpha = -90
 
         self.arm.set_target_xy_a(target_x, target_y, target_alpha)
@@ -79,8 +80,9 @@ class MainWindow(QWidget):
 
         self._from = None
 
-        #set obstacles
+        #set obstacles and containers
         self.generate_obstacles()
+        self.generate_containers()
 
     def set_from(self, _from):
         self._from = _from
@@ -91,6 +93,7 @@ class MainWindow(QWidget):
 
     def generate_new_block(self):
         if self.world.count_blocks() == 6:
+            print("Maximum amount of blocks already placed")
             return
         while True:
             #x = int(random.uniform(1, 9)) * (Block.WIDTH + Block.GAP)
@@ -103,10 +106,15 @@ class MainWindow(QWidget):
                 return
 
     def generate_obstacles(self):
-        for i in range (3):
-            posX = OBSTACLE_POSITIONS_X[i]
-            posY = OBSTACLE_POSITIONS_Y[i]
-            self.world.new_obstacle(posX, posY)
+        self.world.new_obstacle(OBSTACLE_POSITIONS_X[0], OBSTACLE_POSITIONS_Y[0],\
+                                0.01, 0.05)
+        self.world.new_obstacle(OBSTACLE_POSITIONS_X[1], OBSTACLE_POSITIONS_Y[1],\
+                                0.01, 0.02)
+    
+    def generate_containers(self):
+        self.world.new_container('red', CONTAINER_POSITIONS[0])
+        self.world.new_container('green', CONTAINER_POSITIONS[1])
+        self.world.new_container('blue', CONTAINER_POSITIONS[2])
 
     def notify_target_got(self):
         self.notification = True
