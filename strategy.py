@@ -38,6 +38,9 @@ class goto_block(Procedure): pass
 
 class link(Belief): pass
 class coordinates_block(Belief): pass
+class present_in_path(Belief): pass
+class set_path(Procedure): pass
+class clear(Procedure): pass
 class find_min_path(Procedure): pass
 class path(Procedure): pass
 class select_min(Procedure): pass
@@ -47,7 +50,7 @@ class follow_min_path(Procedure): pass
 class selected(SingletonBelief): pass
 class runtime_path(SingletonBelief): pass
 
-def_vars('X','Y','A','_A','D', 'W', 'Gap', 'C', 'N', 'Src', 'Dest', 'Next', 'Cost', 'P', 'Total', 'CurrentMin', 'CurrentMinCost', "index", 'length', 'MinPath')
+def_vars('X','Y','A','_A','D', 'W', 'Gap', 'C', 'N', 'Src', 'Dest', 'Next', 'Cost', 'P', 'Total', 'CurrentMin', 'CurrentMinCost', "index", 'length', 'MinPath', 'Node', 'i', 'AuxLen', 'WriteNode')
 
 # ---------------------------------------------------------------------
 # Agent 'main'
@@ -122,8 +125,11 @@ class main(Agent):
         #Tramite ['all'] possiamo prendere in considerazioni tutte le possibilità di esecuzione, effettua la chiamata su tutti i link disponibili
         path(P, Total, Src,  Dest)['all'] / link(Src,Next,Cost) >> \
           [
+              clear(),
               "P = P.copy()", #Usare copy perché sennò per tutta l'esecuzione, verrà utilizzato lo stesso array e il contenuto sarà errato. Minimum Cost Path ['A', 'B', 'C', 'A', 'D', 'B', 'C', 'A', 'E', 'D', 'B', 'C'], cost 5
               "P.append(Src)",
+              "AuxLen = len(P)",
+              set_path(P, AuxLen),
               "Total = Total + Cost",
               select_min(P, Total, Next, Dest)
           ]
@@ -132,7 +138,12 @@ class main(Agent):
           [
               show_line("Scartato path: ", P, " ", Next, ", - Costo: ", Total)
           ]
-
+          
+        select_min(P, Total, Next, Dest) / present_in_path(Next) >> \
+          [
+              show_line("Individuato e scartato ciclo su nodo ", Next, ". Path: ", P)
+          ]
+          
         select_min(P, Total, Next, Dest) >> \
           [
               path(P, Total, Next, Dest)
@@ -146,23 +157,39 @@ class main(Agent):
               show_line("Lunghezza array: ", length),
               follow_min_path(CurrentMin)
           ]
+          
+        set_path(P, AuxLen) >> [set_path(P, AuxLen, 0)]
+        set_path(P, AuxLen, i) / geq(i, AuxLen) >> [show_line("Path set")]
+        set_path(P, AuxLen, i) >> \
+          [
+              "WriteNode = P[i]",
+              "i = i + 1",
+              +present_in_path(WriteNode),
+              set_path(P, AuxLen, i)
+          ]
       
+        clear()['all'] /present_in_path(Node) >> \
+          [
+              -present_in_path(Node)        
+          ]
+        
         follow_min_path(CurrentMin) / (runtime_path(MinPath) & gt(length, 0)) >> \
-        [
+          [
               "Next = CurrentMin[0]",
               "MinPath.pop(0)",
               +runtime_path(MinPath),
               "length = len(MinPath)",
-show_line("Lunghezza array aggiornato: ", length),
+              show_line("Lunghezza array aggiornato: ", length),
               #"index = index + 1",
               go_to_coordinates_block(Next),
               #follow_min_path(CurrentMin, index)
-        ]
+          ]
   
         follow_min_path(MinPath) >> \
-        [
-              -runtime_path(MinPath)
-        ]
+          [
+              -runtime_path(MinPath),
+              clear()
+          ]
 
         go_to_coordinates_block(Next) / coordinates_block(Next, X, Y) >> \
         [
@@ -200,29 +227,29 @@ PHIDIAS.assert_belief(link('12', '13', 0.01))
 PHIDIAS.assert_belief(link('13', '14', 0.01))
 PHIDIAS.assert_belief(link('14', '15', 0.01))
 
-# PHIDIAS.assert_belief(link('2', '1', 0.01))
-# PHIDIAS.assert_belief(link('3', '2', 0.01))
-# PHIDIAS.assert_belief(link('4', '3', 0.01))
-# PHIDIAS.assert_belief(link('5', '4', 0.01))
-# PHIDIAS.assert_belief(link('6', '1', 0.8))
-# PHIDIAS.assert_belief(link('6', '2', 0.8))
-# PHIDIAS.assert_belief(link('6', '3', 0.8))
-# PHIDIAS.assert_belief(link('6', '4', 0.8))
-# PHIDIAS.assert_belief(link('6', '5', 0.8))
-# PHIDIAS.assert_belief(link('7', '6', 0.65))
-# PHIDIAS.assert_belief(link('8', '7', 0.8))
-# PHIDIAS.assert_belief(link('9', '7', 0.8))
-# PHIDIAS.assert_belief(link('10', '7', 0.8))
-# PHIDIAS.assert_belief(link('16', '7', 0.65))
-# PHIDIAS.assert_belief(link('11', '16', 0.8))
-# PHIDIAS.assert_belief(link('12', '16', 0.8))
-# PHIDIAS.assert_belief(link('13', '16', 0.8))
-# PHIDIAS.assert_belief(link('14', '16', 0.8))
-# PHIDIAS.assert_belief(link('15', '16', 0.8))
-# PHIDIAS.assert_belief(link('12', '11', 0.01))
-# PHIDIAS.assert_belief(link('13', '12', 0.01))
-# PHIDIAS.assert_belief(link('14', '13', 0.01))
-# PHIDIAS.assert_belief(link('15', '14', 0.01))
+PHIDIAS.assert_belief(link('2', '1', 0.01))
+PHIDIAS.assert_belief(link('3', '2', 0.01))
+PHIDIAS.assert_belief(link('4', '3', 0.01))
+PHIDIAS.assert_belief(link('5', '4', 0.01))
+PHIDIAS.assert_belief(link('6', '1', 0.8))
+PHIDIAS.assert_belief(link('6', '2', 0.8))
+PHIDIAS.assert_belief(link('6', '3', 0.8))
+PHIDIAS.assert_belief(link('6', '4', 0.8))
+PHIDIAS.assert_belief(link('6', '5', 0.8))
+PHIDIAS.assert_belief(link('7', '6', 0.65))
+PHIDIAS.assert_belief(link('8', '7', 0.8))
+PHIDIAS.assert_belief(link('9', '7', 0.8))
+PHIDIAS.assert_belief(link('10', '7', 0.8))
+PHIDIAS.assert_belief(link('16', '7', 0.65))
+PHIDIAS.assert_belief(link('11', '16', 0.8))
+PHIDIAS.assert_belief(link('12', '16', 0.8))
+PHIDIAS.assert_belief(link('13', '16', 0.8))
+PHIDIAS.assert_belief(link('14', '16', 0.8))
+PHIDIAS.assert_belief(link('15', '16', 0.8))
+PHIDIAS.assert_belief(link('12', '11', 0.01))
+PHIDIAS.assert_belief(link('13', '12', 0.01))
+PHIDIAS.assert_belief(link('14', '13', 0.01))
+PHIDIAS.assert_belief(link('15', '14', 0.01))
 
 
 PHIDIAS.assert_belief(coordinates_block('1', 0.01, -0.016))
