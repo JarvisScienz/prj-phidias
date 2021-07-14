@@ -185,8 +185,9 @@ class main(Agent):
               #follow_min_path(CurrentMin, index)
           ]
   
-        follow_min_path(MinPath) >> \
+        follow_min_path(MinPath) >> / selected(CurrentMin, CurrentMinCost) \
           [
+              -selected(CurrentMin, CurrentMinCost),
               -runtime_path(MinPath),
               clear()
           ]
