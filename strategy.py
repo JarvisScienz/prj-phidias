@@ -18,6 +18,8 @@ class go_to(Belief): pass
 class new_block(Belief): pass
 class sense_distance(Belief): pass
 class sense_color(Belief): pass
+class plot(Belief): pass
+class reset_vectors(Belief): pass
 
 # beliefs sent by the robot
 class target_got(Reactor): pass
@@ -35,6 +37,7 @@ class scan(Procedure): pass
 class _scan(Procedure): pass
 class _scan_next(Procedure): pass
 class goto_block(Procedure): pass
+class reset(Procedure): pass
 
 class link(Belief): pass
 class coordinates_block(Belief): pass
@@ -62,6 +65,7 @@ class main(Agent):
         generate() >> [ +new_block()[{'to': 'robot@127.0.0.1:6566'}] ]
         sense() >> [ +sense_distance()[{'to': 'robot@127.0.0.1:6566'}],
                      +sense_color()[{'to': 'robot@127.0.0.1:6566'}] ]
+        reset() >> [ +reset_vectors()[{'to': 'robot@127.0.0.1:6566'}]]
 
         # strategy
         generate(0) >> [show_line("Blocchi posizionati")]
@@ -185,11 +189,12 @@ class main(Agent):
               #follow_min_path(CurrentMin, index)
           ]
   
-        follow_min_path(MinPath) >> / selected(CurrentMin, CurrentMinCost) \
+        follow_min_path(MinPath) / selected(CurrentMin, CurrentMinCost) >> \
           [
               -selected(CurrentMin, CurrentMinCost),
               -runtime_path(MinPath),
-              clear()
+              clear(),
+              +plot() [{'to': 'robot@127.0.0.1:6566'}]
           ]
 
         go_to_coordinates_block(Next) / coordinates_block(Next, X, Y) >> \

@@ -149,7 +149,7 @@ class Trajectory3:
         vp_a = self.start_alpha + self.virtual_pos * math.cos(self.target_theta)
         #print(vp_x, vp_y, vp_a, distance)
 
-        (cx, cy, ca) = self.arm.get_pose_xy_a().get_pose()
+        (cx, cy, ca) = self.arm.get_pose_xy_a(True).get_pose()
 
         d = math.sqrt( (cx-self.target_x)**2 + (cy-self.target_y)**2 + (ca-self.target_alpha)**2)
 

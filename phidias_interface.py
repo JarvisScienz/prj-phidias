@@ -129,6 +129,12 @@ def process_incoming_request(ui, from_address, payload):
                             elif Name == 'sense_color':
                                 ui.set_from(_from)
                                 ui.sense_color()
+                            elif Name == 'plot':
+                                ui.set_from(_from)
+                                ui.plot()
+                            elif Name == 'reset_vectors':
+                                ui.set_from(_from)
+                                ui.reset_vectors()
                             response = { 'result' : 'ok' }
                         else:
                             response = { 'result' : 'err',

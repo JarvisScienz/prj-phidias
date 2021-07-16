@@ -12,15 +12,16 @@ from pose import *
 class ThreeJointsArm:
 
     def __init__(self, trajectory_controller, use_profile):
-        self.element_1_model = ArmElement(0.1, 0.5 + 0.5 + 0.2, 7e-5)
+        self.element_1_model = ArmElement(0.1, 0.5 + 0.5 + 0.2, 7e-5, "arm 1")
         self.element_1_control = ArmControl(self.element_1_model, use_profile)
-        self.element_2_model = ArmElement(0.1, 0.5 + 0.2, 7e-5)
+        self.element_2_model = ArmElement(0.1, 0.5 + 0.2, 7e-5, "arm 2")
         self.element_2_control = ArmControl(self.element_2_model, use_profile)
-        self.element_3_model = ArmElement(0.02, 0.2, 7e-5)
+        self.element_3_model = ArmElement(0.02, 0.2, 7e-5, "end effector")
         self.element_3_control = ArmControl(self.element_3_model, use_profile)
         self.trajectory = trajectory_controller
         self.trajectory.arm = self
         self.pose = Pose()
+        self.alpha_vect = []
 
     def set_target(self, theta1, theta2, theta3):
         self.element_1_control.set_target(theta1)
@@ -44,18 +45,20 @@ class ThreeJointsArm:
         (x2, y2) = local_to_global(x1, y1, self.element_1_model.theta, _x2, _y2)
 
         alpha = self.element_1_model.theta + self.element_2_model.theta + self.element_3_model.theta
+        #self.alpha_vect.append(alpha)
         (x3, y3) = local_to_global(x2, y2, alpha, self.element_3_model.L, 0)
 
         return [ (x1, y1), (x2, y2), (x3, y3) ]
 
-    def get_pose_xy_a(self):
+    def get_pose_xy_a(self, add_alpha):
         (x1, y1) = self.element_1_model.get_pose()
 
         (_x2, _y2) = self.element_2_model.get_pose()
         (x2, y2) = local_to_global(x1, y1, self.element_1_model.theta, _x2, _y2)
 
         alpha = self.element_1_model.theta + self.element_2_model.theta + self.element_3_model.theta
-
+        if add_alpha == True:
+            self.alpha_vect.append(alpha)
         self.pose.set_pose(x2, y2, alpha)
 
         return self.pose
@@ -83,3 +86,27 @@ class ThreeJointsArm:
             self.set_target(th1, th2, th3)
         self.evaluate(delta_t)
 
+    def plot_alpha(self, i, t_vect):
+        if len(t_vect) != len(self.alpha_vect):
+            print("end effector: alpha and time vectors have different lengths, plot unavailable")
+            print("alpha: " + str(len(self.alpha_vect)) + " elementi")
+            print("time: " + str(len(t_vect)) + " elements")
+            return
+        
+        pylab.figure(i)
+        pylab.plot(t_vect, self.alpha_vect, 'g-+', label='position, alpha, end effector')
+        pylab.xlabel('time')
+        pylab.legend()
+        pylab.show()
+
+    def plot(self, t_vect):
+        self.element_1_model.plot(0, t_vect)
+        self.element_2_model.plot(2, t_vect)
+        self.element_3_model.plot(4, t_vect)
+        self.plot_alpha(6, t_vect)
+        
+    def reset_vectors(self):
+        alpha_vect = []
+        self.element_1_model.reset_vectors()
+        self.element_2_model.reset_vectors()
+        self.element_3_model.reset_vectors()

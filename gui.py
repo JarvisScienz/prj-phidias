@@ -46,6 +46,8 @@ class MainWindow(QWidget):
 
         self.delta_t = 1e-2 # 10ms of time-tick
         self.t = 0
+        self.t_vect = []
+        self.last_reset_at = 0
 
         self.trajectory_data = [ ]
         self.target_trajectory_data = [ ]
@@ -123,7 +125,7 @@ class MainWindow(QWidget):
 
     def send_pos(self):
         if self._from is not None:
-            p = self.arm.get_pose_xy_a().get_pose()
+            p = self.arm.get_pose_xy_a(False).get_pose()
             Messaging.send_belief(self._from, 'pose', [p[0], p[1], math.degrees(p[2])], 'robot')
 
     def sense_distance(self):
@@ -144,6 +146,11 @@ class MainWindow(QWidget):
                 params = [d]
             Messaging.send_belief(self._from, 'color', params, 'robot')
 
+    def reset_vectors(self):
+        self.t_vect = []
+        self.last_reset_at = self.t
+        self.arm.reset_vectors()
+
     def go(self):
         #self.telemetry.gather(self.delta_t, self.arm.element_3_model.w, self.arm.element_3_control.w_target)
         #if self.t > 8:
@@ -161,8 +168,11 @@ class MainWindow(QWidget):
         #if self.use_trajectory:
         #    self.target_trajectory_data.append( (self.arm.trajectory_x, self.arm.trajectory_y) )
         self.t += self.delta_t
+        self.t_vect.append(self.t - self.last_reset_at)
         self.update() # repaint window
 
+    def plot(self):
+        self.arm.plot(self.t_vect)
 
     def paintEvent(self, event):
         qp = QPainter()
