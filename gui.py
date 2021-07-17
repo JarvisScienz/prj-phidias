@@ -5,6 +5,7 @@
 import sys
 import math
 import random
+import pylab
 
 #
 from PyQt5.QtWidgets import QMainWindow, QWidget, QApplication
@@ -55,6 +56,7 @@ class MainWindow(QWidget):
         self.use_profile = False
         self.use_trajectory = True
         self.use_angle_interpolation = False
+        self.make_plot = False
 
         self.trajectory = Trajectory3(1.0, 1.5, 1.5)
 
@@ -150,13 +152,18 @@ class MainWindow(QWidget):
         self.t_vect = []
         self.last_reset_at = self.t
         self.arm.reset_vectors()
-
+    
     def go(self):
         #self.telemetry.gather(self.delta_t, self.arm.element_3_model.w, self.arm.element_3_control.w_target)
         #if self.t > 8:
         #    self.telemetry.show()
         #    sys.exit(0)
-
+        
+        if self.make_plot:
+            pylab.close("all")
+            self.arm.plot(self.t_vect)
+            self.make_plot = False
+        
         if self.trajectory.target_got:
             if not(self.notification):
                 self.notify_target_got()
@@ -172,7 +179,7 @@ class MainWindow(QWidget):
         self.update() # repaint window
 
     def plot(self):
-        self.arm.plot(self.t_vect)
+        self.make_plot = True
 
     def paintEvent(self, event):
         qp = QPainter()
