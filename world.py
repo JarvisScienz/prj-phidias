@@ -43,8 +43,8 @@ class World:
                 return True
         return False
 
-    def sense_distance(self):
-        (x,y,a) = self.ui.arm.get_pose_xy_a().get_pose()
+    def capture(self):
+        (x,y,a) = self.ui.arm.get_pose_xy_a(False).get_pose()
         a = math.degrees(a)
         if abs(a + 90) > 2: # +/- 2 degrees
             return None
@@ -53,11 +53,33 @@ class World:
         for b in self.__blocks:
             (xb,yb,ab) = b.get_pose()
             if (x >= xb)and(x <= (xb + Block.WIDTH)):
+                return b
+        return None
+    
+    def release(self, b):
+        if b == None:
+            print("No block captured. Release impossible")
+            return
+        if b in self.__blocks:
+            self.__blocks.remove(b)
+
+    def sense_distance(self, target_x):
+        (x,y,a) = self.ui.arm.get_pose_xy_a(False).get_pose()
+        a = math.degrees(a)
+        if abs(a + 90) > 2: # +/- 2 degrees
+            return None
+        L = self.ui.arm.element_3_model.L
+        d = y - L - World.FLOOR_LEVEL
+        for b in self.__blocks:
+            (xb,yb,ab) = b.get_pose()
+            if (x >= xb)and(x <= (xb + Block.WIDTH)):
+                b.set_x(target_x)
                 return (d - Block.HEIGHT)
+        print("No block sensed")
         return None
 
     def sense_color(self):
-        (x,y,a) = self.ui.arm.get_pose_xy_a().get_pose()
+        (x,y,a) = self.ui.arm.get_pose_xy_a(False).get_pose()
         a = math.degrees(a)
         if abs(a + 90) > 2: # +/- 2 degrees
             return None

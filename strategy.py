@@ -20,11 +20,14 @@ class sense_distance(Belief): pass
 class sense_color(Belief): pass
 class plot(Belief): pass
 class reset_vectors(Belief): pass
+class capture_block(Belief): pass
+class release_block(Belief): pass
 
 # beliefs sent by the robot
 class target_got(Reactor): pass
 class distance(Reactor): pass
 class color(Reactor): pass
+class remove(Reactor): pass
 class pose(SingletonBelief): pass
 
 class block(Belief): pass
@@ -38,6 +41,8 @@ class _scan(Procedure): pass
 class _scan_next(Procedure): pass
 class goto_block(Procedure): pass
 class reset(Procedure): pass
+class capture(Procedure): pass
+class release(Procedure): pass
 
 class link(Belief): pass
 class coordinates_block(Belief): pass
@@ -66,6 +71,8 @@ class main(Agent):
         sense() >> [ +sense_distance()[{'to': 'robot@127.0.0.1:6566'}],
                      +sense_color()[{'to': 'robot@127.0.0.1:6566'}] ]
         reset() >> [ +reset_vectors()[{'to': 'robot@127.0.0.1:6566'}]]
+        capture() >> [+capture_block()[{'to': 'robot@127.0.0.1:6566'}]]
+        release() >> [+release_block()[{'to': 'robot@127.0.0.1:6566'}]]
 
         # strategy
         generate(0) >> [show_line("Blocchi posizionati")]
@@ -95,6 +102,10 @@ class main(Agent):
                                                                 _scan_next() ]
         +color(C)[{'from':_A}] >> [ show_line("color(C)"), _scan_next() ]
         +color()[{'from':_A}] >> [ show_line("color()"), _scan_next() ]
+        
+        +remove(X, C)[{'from':_A}] / block(X, C) >> [-block(X, C)]
+        
+        +remove(X, C)[{'from':_A}] >> [show_line("The block (", X, " ", C, ") was not found in the knowledge base")]
 
         _scan_next() / (target(X, Y) & gt(X,0.2)) >> \
           [

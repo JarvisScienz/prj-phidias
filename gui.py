@@ -132,7 +132,7 @@ class MainWindow(QWidget):
 
     def sense_distance(self):
         if self._from is not None:
-            d = self.world.sense_distance()
+            d = self.world.sense_distance(self.trajectory.target_x)
             if d is None:
                 params = []
             else:
@@ -147,6 +147,20 @@ class MainWindow(QWidget):
             else:
                 params = [d]
             Messaging.send_belief(self._from, 'color', params, 'robot')
+            
+    def capture(self):
+        self.arm.set_captured_block(self.world.capture())
+        if self.arm.captured_block == None:
+            print("Capture unsuccesful")
+            return
+        
+            
+    def release(self):
+        block = self.arm.release_captured_block()
+        x = block.get_x()
+        c = block.get_color()
+        Messaging.send_belief(self._from, 'remove', [x, c], 'robot')
+        self.world.release(block)
 
     def reset_vectors(self):
         self.t_vect = []

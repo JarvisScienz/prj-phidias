@@ -25,7 +25,14 @@ class Block:
         self.__pose = Pose()
         self.__w = Pose.pixel_scale(Block.WIDTH)
         self.__h = Pose.pixel_scale(Block.HEIGHT)
+        self.__x = None
 
+    def get_x(self):
+        return self.__x
+    
+    def set_x(self, x):
+        self.__x = x
+    
     def get_pose(self):
         return self.__pose.get_pose()
 

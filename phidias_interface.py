@@ -135,6 +135,12 @@ def process_incoming_request(ui, from_address, payload):
                             elif Name == 'reset_vectors':
                                 ui.set_from(_from)
                                 ui.reset_vectors()
+                            elif Name == 'capture_block':
+                                ui.set_from(_from)
+                                ui.capture()
+                            elif Name == 'release_block':
+                                ui.set_from(_from)
+                                ui.release()
                             response = { 'result' : 'ok' }
                         else:
                             response = { 'result' : 'err',

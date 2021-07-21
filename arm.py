@@ -8,6 +8,7 @@ from arm_control import *
 from trajectory import *
 from geometry import *
 from pose import *
+from block import *
 
 class ThreeJointsArm:
 
@@ -22,6 +23,15 @@ class ThreeJointsArm:
         self.trajectory.arm = self
         self.pose = Pose()
         self.alpha_vect = []
+        self.captured_block = None
+
+    def set_captured_block(self, block):
+        self.captured_block = block
+        
+    def release_captured_block(self):
+        b = self.captured_block
+        self.captured_block = None
+        return b
 
     def set_target(self, theta1, theta2, theta3):
         self.element_1_control.set_target(theta1)
@@ -45,9 +55,13 @@ class ThreeJointsArm:
         (x2, y2) = local_to_global(x1, y1, self.element_1_model.theta, _x2, _y2)
 
         alpha = self.element_1_model.theta + self.element_2_model.theta + self.element_3_model.theta
-        #self.alpha_vect.append(alpha)
         (x3, y3) = local_to_global(x2, y2, alpha, self.element_3_model.L, 0)
-
+        
+        if self.captured_block != None:
+            self.captured_block.set_pose(x3 - Block.WIDTH/2, \
+                                         y3 - self.element_3_model.L + Block.HEIGHT/2 +0.001, \
+                                         0)
+        
         return [ (x1, y1), (x2, y2), (x3, y3) ]
 
     def get_pose_xy_a(self, add_alpha):
