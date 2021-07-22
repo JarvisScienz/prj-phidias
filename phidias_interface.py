@@ -120,6 +120,9 @@ def process_incoming_request(ui, from_address, payload):
                             if Name == 'go_to':
                                 ui.set_from(_from)
                                 ui.go_to(*Terms)
+                            elif Name == 'go_to_next_block':
+                                ui.set_from(_from)
+                                ui.go_to_next_block(*Terms)
                             elif Name == 'new_block':
                                 ui.set_from(_from)
                                 ui.generate_new_block()
@@ -172,4 +175,3 @@ class Messaging:
     def send_belief(cls, destination, belief, terms, source):
         (agent_name, destination) = Messaging.parse_destination(destination)
         send_belief_http(agent_name, destination, belief, terms, source)
-
