@@ -87,7 +87,7 @@ class World:
         d = y - L - World.FLOOR_LEVEL
         for b in self.__blocks:
             (xb,yb,ab) = b.get_pose()
-            if (x >= xb)and(x <= (xb + Block.WIDTH)):
+            if ((x >= xb)and(x <= (xb + Block.WIDTH)) and (y <= -0.016)):
                 return b.get_color()
         return None
 
@@ -102,4 +102,3 @@ class World:
         y = Pose.xy_to_pixel(0, World.FLOOR_LEVEL)[1]
         qp.drawLine(50, y, 900, y)
         qp.drawLine(50, y+1, 900, y+1)
-
