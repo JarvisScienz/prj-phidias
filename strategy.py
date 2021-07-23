@@ -147,6 +147,7 @@ class main(Agent):
                                                                 -block(X),
                                                                 +block(X, C),
                                                                 +block_picked(X, Y, C),
+                                                                capture(),
                                                                 goto_container(C) ]
         +color(C)[{'from':_A}] >> [ show_line("color(C)"), _scan_next() ]
         +color()[{'from':_A}] >> [ _scan_next() ]
@@ -176,10 +177,10 @@ class main(Agent):
              [ show_line("Sposto l'elemento nel container ROSSO"), 
                -block_picked(X,Y,C),
                #delete_block(X),
-               "Src = Src - 1",
-               capture(),
+               #"Src = Src - 1",
                +last_index(8),
                find_min_path(Src, 8),
+               #release(),
                #go(0.08, -0.016, -90),
                #+target(0.08, 0.02),
                -container(C, Total, content), 
@@ -193,9 +194,10 @@ class main(Agent):
              [ show_line("Sposto l'elemento nel container VERDE"), 
                -block_picked(X,Y,C),
                #delete_block(X),
-               "Src = Src - 1",
+               #"Src = Src - 1",
                +last_index(9),
                find_min_path(Src, 9),
+               #release(),
                #go(0.095, -0.016, -90), 
                #+target(0.095, 0.02),
                -container(C, Total, content), 
@@ -209,9 +211,10 @@ class main(Agent):
              [ show_line("Sposto l'elemento nel container BLUE"), 
                -block_picked(X,Y,C),
                #delete_block(X),
-               "Src = Src - 1",
+               #"Src = Src - 1",
                +last_index(10),
                find_min_path(Src, 10),
+               #release(),
                #go(0.12, -0.016, -90), 
                #+target(0.12, 0.02),
                -container(C, Total, content), 
@@ -326,6 +329,7 @@ class main(Agent):
               -runtime_path(MinPath),
               clear(),
               -last_index(Node),
+              release(),
               find_min_path(Node,N),
               +plot() [{'to': 'robot@127.0.0.1:6566'}]
           ]
