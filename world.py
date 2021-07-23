@@ -17,9 +17,14 @@ class World:
         self.__containers = [ ]
         self.ui = ui
 
-    def new_block(self, uColor, uX):
+    def new_block(self, uColor, uX, uP):
         b = Block(uColor)
         b.set_pose(uX, World.FLOOR_LEVEL, 0)
+        if uP < 5:
+            uP = uP + 1
+        else:
+            uP = uP + 6
+        b.set_i(uP)
         self.__blocks.append(b)
 
     def new_container(self, uColor, uX):
@@ -63,20 +68,20 @@ class World:
         if b in self.__blocks:
             self.__blocks.remove(b)
 
-    def sense_distance(self, target_x):
+    #also gives information about the positional index of the block
+    def sense_distance(self):
         (x,y,a) = self.ui.arm.get_pose_xy_a(False).get_pose()
         a = math.degrees(a)
         if abs(a + 90) > 2: # +/- 2 degrees
-            return None
+            return None, None
         L = self.ui.arm.element_3_model.L
         d = y - L - World.FLOOR_LEVEL
         for b in self.__blocks:
             (xb,yb,ab) = b.get_pose()
             if (x >= xb)and(x <= (xb + Block.WIDTH)):
-                b.set_x(target_x)
-                return (d - Block.HEIGHT)
+                return (d - Block.HEIGHT), b.get_i()
         print("No block sensed")
-        return None
+        return None, None
 
     def sense_color(self):
         (x,y,a) = self.ui.arm.get_pose_xy_a(False).get_pose()

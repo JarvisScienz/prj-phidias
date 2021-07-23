@@ -45,11 +45,9 @@ class sense(Procedure): pass
 class scan(Procedure): pass
 class _scan(Procedure): pass
 class _scan_next(Procedure): pass
-class goto_block(Procedure): pass
 class reset(Procedure): pass
 class capture(Procedure): pass
 class release(Procedure): pass
-class goto_block(Procedure): pass
 class goto_container(Procedure): pass
 
 class link(Belief): pass
@@ -69,6 +67,7 @@ class runtime_path(SingletonBelief): pass
 class index(SingletonBelief): pass
 class container(Belief): pass
 class last_index(Belief): pass
+class should_sense(SingletonBelief): pass
 
 class GetCoordinates(Action):
     def execute(self, X, Y, coordinates):
@@ -93,7 +92,7 @@ class main(Agent):
         go(X,Y,A) >> [ +go_to(X,Y,A)[{'to': 'robot@127.0.0.1:6566'}] ]
         go_to_block(X,Y,A) >> [ +go_to_next_block(X,Y,A)[{'to': 'robot@127.0.0.1:6566'}] ]
         generate() >> [ +new_block()[{'to': 'robot@127.0.0.1:6566'}] ]
-        sense() >> [ +sense_distance()[{'to': 'robot@127.0.0.1:6566'}],
+        sense() / should_sense() >> [ +sense_distance()[{'to': 'robot@127.0.0.1:6566'}],
                      +sense_color()[{'to': 'robot@127.0.0.1:6566'}] ]
         reset() >> [ +reset_vectors()[{'to': 'robot@127.0.0.1:6566'}]]
         capture() >> [+capture_block()[{'to': 'robot@127.0.0.1:6566'}]]
@@ -116,7 +115,8 @@ class main(Agent):
 
         pick() / coordinates_node(i,X,Y) >> [
                                       +index(i),
-                                      go_to_block(X, 0.02, -90)]
+                                      go_to_block(X, 0.02, -90),
+                                      +should_sense()]
 
         +target_got()[{'from': _A}] / (target(X, Y) & runtime_path(MinPath) & index(N)) >> \
           [
@@ -135,26 +135,27 @@ class main(Agent):
               pick(N)
           ]
 
-        +distance(D)[{'from':_A}] / (target(X, Y) & lt(D,0.02)) >> [ show_line("Block found in position ", X),
-                                                                      +block(X) ]
+        +distance(D, i)[{'from':_A}] / (target(X, Y) & lt(D,0.02)) >> [ show_line("Block found in position ", X),
+                                                                      +block(i) ]
 
-        +color(C)[{'from':_A}] / (target(X, Y) & container(C, Total, content) & eq (Total, 2)) >> [ show_line("Color ", C, " sampled in position ", X),
-                                                                -block(X),
-                                                                +block(X, C),
+        +color(C)[{'from':_A}] / (target(X, Y) & container(C, Total, content) & eq (Total, 2) & block(i)) >> [ show_line("Color ", C, " sampled in position ", X),
+                                                                -block(i),
+                                                                +block(i, C),
                                                                 show_line('Contenitore ', C, ' saturo. Non è possibile aggiungere il blocco (', X, ',', Y, ')') ]
 
-        +color(C)[{'from':_A}] / (target(X, Y) ) >> [ show_line("Color ", C, " sampled in position ", X),
-                                                                -block(X),
-                                                                +block(X, C),
+        +color(C)[{'from':_A}] / (target(X, Y) & block(i)) >> [ show_line("Color ", C, " sampled in position ", X),
+                                                                -block(i),
+                                                                +block(i, C),
                                                                 +block_picked(X, Y, C),
                                                                 capture(),
+                                                                -should_sense(),
                                                                 goto_container(C) ]
         +color(C)[{'from':_A}] >> [ show_line("color(C)"), _scan_next() ]
         +color()[{'from':_A}] >> [ _scan_next() ]
         
-        +remove(X, C)[{'from':_A}] / block(X, C) >> [-block(X, C)]
+        +remove(i, C)[{'from':_A}] / block(i, C) >> [-block(i, C)]
         
-        +remove(X, C)[{'from':_A}] >> [show_line("The block (", X, " ", C, ") was not found in the knowledge base")]
+        +remove(i, C)[{'from':_A}] >> [show_line("The block (",i , " ", C, ") was not found in the knowledge base")]
 
         _scan_next() / (target(X, Y) & gt(X,0.2)) >> \
           [
@@ -169,9 +170,6 @@ class main(Agent):
               +target(X, Y),
               go(X, Y, -90)
           ]
-
-        goto_block(C) / block(X,C) >> [ go(X, 0.02, -90),
-                                        +target(X, 0.02) ]
 
         goto_container(C) / (index(Src) & block_picked(X,Y,C) & eq(C, 'red') & container(C, Total, content)) >> \
              [ show_line("Sposto l'elemento nel container ROSSO"), 
@@ -330,6 +328,7 @@ class main(Agent):
               clear(),
               -last_index(Node),
               release(),
+              +should_sense(),
               find_min_path(Node,N),
               +plot() [{'to': 'robot@127.0.0.1:6566'}]
           ]

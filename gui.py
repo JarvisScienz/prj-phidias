@@ -114,7 +114,7 @@ class MainWindow(QWidget):
             col = int(random.uniform(0, 3))
             if not(self.world.floor_position_busy(pos)):
                 #print("Position block: ", pos)
-                self.world.new_block(COLOR_NAMES[col], pos)
+                self.world.new_block(COLOR_NAMES[col], pos, x)
                 return
 
     def generate_obstacles(self):
@@ -140,11 +140,11 @@ class MainWindow(QWidget):
 
     def sense_distance(self):
         if self._from is not None:
-            d = self.world.sense_distance(self.trajectory.target_x)
+            d, i = self.world.sense_distance()
             if d is None:
                 params = []
             else:
-                params = [d]
+                params = [d, i]
             Messaging.send_belief(self._from, 'distance', params, 'robot')
 
     def sense_color(self):
@@ -165,9 +165,9 @@ class MainWindow(QWidget):
             
     def release(self):
         block = self.arm.release_captured_block()
-        x = block.get_x()
+        i = block.get_i()
         c = block.get_color()
-        Messaging.send_belief(self._from, 'remove', [x, c], 'robot')
+        Messaging.send_belief(self._from, 'remove', [i, c], 'robot')
         self.world.release(block)
 
     def reset_vectors(self):
