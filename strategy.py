@@ -49,6 +49,7 @@ class reset(Procedure): pass
 class capture(Procedure): pass
 class release(Procedure): pass
 class goto_container(Procedure): pass
+class next_move(Procedure): pass
 
 class link(Belief): pass
 class coordinates_node(Belief): pass
@@ -66,8 +67,10 @@ class selected(SingletonBelief): pass
 class runtime_path(SingletonBelief): pass
 class index(SingletonBelief): pass
 class container(Belief): pass
+class first_index(Belief): pass
 class last_index(Belief): pass
 class should_sense(SingletonBelief): pass
+class current_node(SingletonBelief): pass
 
 class GetCoordinates(Action):
     def execute(self, X, Y, coordinates):
@@ -77,7 +80,7 @@ class GetCoordinates(Action):
 
 class CheckFirstValue(ActiveBelief):
     def evaluate(self, path, node):
-        print("CheckFirstValue. Node: ", node.value, " - path: ", path.value[0])
+        #print("CheckFirstValue. Node: ", node.value, " - path: ", path.value[0])
         return path.value[0] == node.value
         #return True
 
@@ -109,19 +112,39 @@ class main(Agent):
               show_line('end')
           ]
 
-        pick(i) / coordinates_node(i,X,Y) >> [ "Src=i", "Dest = i + 1",  
-                                      +index(Dest),
-                                      find_min_path(Src, Dest)]
+        pick(i) / (index(i) & eq(i, 6) & current_node(Src)) >> [
+            +index(12),
+            find_min_path(Src, 11)
+        ]
 
-        pick() / coordinates_node(i,X,Y) >> [
-                                      +index(i),
-                                      go_to_block(X, 0.02, -90),
-                                      +should_sense()]
+        pick(i) / (index(i) & current_node(Src)) >> [
+            "Dest = i + 1",  
+            +index(Dest),
+            "print('from: ' + str(Src) + ' to ' + str(i))",
+            find_min_path(Src, i)
+        ]
 
+        pick() >> [
+            +index(1),
+            +should_sense(),
+            go_to_coordinates_block(6)
+        ]
+        
+        next_move() / block_picked(X, Y, C) >> [
+              #show_line("goto_container"),
+              goto_container(C)  
+          ]
+        
+        next_move() / (index(i) & should_sense())>> [
+            show_line("pick ", i),
+            pick(i)
+          ]
+        
         +target_got()[{'from': _A}] / (target(X, Y) & runtime_path(MinPath) & index(N)) >> \
           [
-              show_line('Reached Position (', X,",",Y,")"),
-              sense(),
+              #show_line('Reached Position (', X,",",Y,")"),
+              #show_line(MinPath),
+              #sense(),
               #show_line("Index: ", index),
               #"index = index + 1",
 #              go_to_coordinates_block(Next),
@@ -130,52 +153,45 @@ class main(Agent):
 
         +target_got()[{'from': _A}] / (target(X, Y) & index(N)) >> \
           [
-              show_line('2.Reached Position (', X,",",Y,")"),
+              #show_line('2.Reached Position (', X,",",Y,")"),
               sense(),
-              pick(N)
+              #next_move()
           ]
 
-        +distance(D, i)[{'from':_A}] / (target(X, Y) & lt(D,0.02)) >> [ show_line("Block found in position ", X),
+        +distance(D, i)[{'from':_A}] / (target(X, Y) & lt(D,0.02)) >> [ #show_line("Block found in position ", X),
                                                                       +block(i) ]
 
-        +color(C)[{'from':_A}] / (target(X, Y) & container(C, Total, content) & eq (Total, 2) & block(i)) >> [ show_line("Color ", C, " sampled in position ", X),
-                                                                -block(i),
-                                                                +block(i, C),
-                                                                show_line('Contenitore ', C, ' saturo. Non è possibile aggiungere il blocco (', X, ',', Y, ')') ]
+        +color(C)[{'from':_A}] / (target(X, Y) & container(C, Total, content) & eq (Total, 2) & block(i)) >> [ 
+            show_line("Color ", C, " sampled in position ", X),
+            -block(i),
+            +block(i, C),
+            show_line('Contenitore ', C, ' saturo. Non è possibile aggiungere il blocco (', X, ',', Y, ')'),
+            next_move()
+        ]
 
-        +color(C)[{'from':_A}] / (target(X, Y) & block(i)) >> [ show_line("Color ", C, " sampled in position ", X),
-                                                                -block(i),
-                                                                +block(i, C),
-                                                                +block_picked(X, Y, C),
-                                                                capture(),
-                                                                -should_sense(),
-                                                                goto_container(C) ]
-        +color(C)[{'from':_A}] >> [ show_line("color(C)"), _scan_next() ]
-        +color()[{'from':_A}] >> [ _scan_next() ]
+        +color(C)[{'from':_A}] / (target(X, Y) & block(i)) >> [ 
+            #show_line("Color ", C, " sampled in position ", X),
+            -block(i),
+            +block(i, C),
+            +block_picked(X, Y, C),
+            capture(),
+            show_line(C, " block captured"),
+            -should_sense(),
+            next_move()
+        ]
+        
+        +color()[{'from':_A}] >> [next_move()]
         
         +remove(i, C)[{'from':_A}] / block(i, C) >> [-block(i, C)]
         
         +remove(i, C)[{'from':_A}] >> [show_line("The block (",i , " ", C, ") was not found in the knowledge base")]
 
-        _scan_next() / (target(X, Y) & gt(X,0.2)) >> \
-          [
-              show_line('end')
-          ]
-        _scan_next() / (target(X, Y) & geometry(W, Gap) & runtime_path(path)) >> \
-          [
-              #show_line("X value: ", X),
-              #show_line("W value: ", W),
-              #show_line("Gap value: ", Gap),
-              "X = X + W + Gap", 
-              +target(X, Y),
-              go(X, Y, -90)
-          ]
-
-        goto_container(C) / (index(Src) & block_picked(X,Y,C) & eq(C, 'red') & container(C, Total, content)) >> \
+        goto_container(C) / (current_node(Src) & block_picked(X,Y,C) & eq(C, 'red') & container(C, Total, content)) >> \
              [ show_line("Sposto l'elemento nel container ROSSO"), 
                -block_picked(X,Y,C),
                #delete_block(X),
                #"Src = Src - 1",
+               +first_index(Src),
                +last_index(8),
                find_min_path(Src, 8),
                #release(),
@@ -186,13 +202,15 @@ class main(Agent):
                GetCoordinates(X,Y,coordinates), 
                "content.append(coordinates)", 
                "Total = Total + 1", 
-               +container(C, Total, content)]
+               +container(C, Total, content),
+             ]
 
-        goto_container(C) / (index(Src) & block_picked(X,Y,C) & eq(C, 'green') & container(C, Total, content)) >> \
+        goto_container(C) / (current_node(Src) & block_picked(X,Y,C) & eq(C, 'green') & container(C, Total, content)) >> \
              [ show_line("Sposto l'elemento nel container VERDE"), 
                -block_picked(X,Y,C),
                #delete_block(X),
                #"Src = Src - 1",
+               +first_index(Src),
                +last_index(9),
                find_min_path(Src, 9),
                #release(),
@@ -203,13 +221,15 @@ class main(Agent):
                GetCoordinates(X,Y,coordinates), 
                "content.append(coordinates)", 
                "Total = Total + 1", 
-               +container(C, Total, content)]
+               +container(C, Total, content),
+             ]
 
-        goto_container(C) / (index(Src) & block_picked(X,Y,C) & eq(C, 'blue') & container(C, Total, content)) >> \
+        goto_container(C) / (current_node(Src) & block_picked(X,Y,C) & eq(C, 'blue') & container(C, Total, content)) >> \
              [ show_line("Sposto l'elemento nel container BLUE"), 
                -block_picked(X,Y,C),
                #delete_block(X),
                #"Src = Src - 1",
+               +first_index(Src),
                +last_index(10),
                find_min_path(Src, 10),
                #release(),
@@ -220,11 +240,12 @@ class main(Agent):
                GetCoordinates(X,Y,coordinates), 
                "content.append(coordinates)", 
                "Total = Total + 1", 
-               +container(C, Total, content)]
+               +container(C, Total, content),
+             ]
 
         find_min_path(Src, Dest) / selected(CurrentMin, CurrentMinCost)>> \
         [
-           show_line("Cerco il path tra: ", Src, " e ", Dest),
+           #show_line("Cerco il path tra: ", Src, " e ", Dest),
            -selected(CurrentMin, CurrentMinCost),
            path([], 0, Src, Dest),
            show_min()
@@ -232,7 +253,7 @@ class main(Agent):
 
         find_min_path(Src, Dest) >> \
         [
-           show_line("Cerco il path tra: ", Src, " e ", Dest),
+           #show_line("Cerco il path tra: ", Src, " e ", Dest),
            path([], 0, Src, Dest),
            show_min()
         ]
@@ -241,7 +262,7 @@ class main(Agent):
         path(P, Total, Dest, Dest) >> \
         [ 
               "P.append(Dest)", 
-              show_line("Trovato nuovo minimo. Path: ", P, " - Costo: ", Total),
+              #show_line("Trovato nuovo minimo. Path: ", P, " - Costo: ", Total),
               +selected(P, Total)
         ]
         #Tramite ['all'] possiamo prendere in considerazioni tutte le possibilità di esecuzione, effettua la chiamata su tutti i link disponibili
@@ -258,12 +279,12 @@ class main(Agent):
 
         select_min(P, Total, Next, Dest) / (selected(CurrentMin, CurrentMinCost) & gt(Total, CurrentMinCost)) >> \
           [
-              show_line("Scartato path: ", P, " ", Next, ", - Costo: ", Total)
+              #show_line("Scartato path: ", P, " ", Next, ", - Costo: ", Total)
           ]
           
         select_min(P, Total, Next, Dest) / present_in_path(Next) >> \
           [
-              show_line("Individuato e scartato ciclo su nodo ", Next, ". Path: ", P)
+              #show_line("Individuato e scartato ciclo su nodo ", Next, ". Path: ", P)
           ]
           
         select_min(P, Total, Next, Dest) >> \
@@ -273,7 +294,7 @@ class main(Agent):
 
         show_min() / selected(CurrentMin, CurrentMinCost)  >> \
           [
-              show_line("Path costo minimo: ", CurrentMin, ". Costo: ", CurrentMinCost),
+              #show_line("Path costo minimo: ", CurrentMin, ". Costo: ", CurrentMinCost),
               +runtime_path(CurrentMin),
               "length = len(CurrentMin)",
               show_line("Lunghezza array: ", length),
@@ -306,6 +327,7 @@ class main(Agent):
               "length = len(MinPath)",
               #show_line("Lunghezza array aggiornato: ", length),
               #go_to_coordinates_node(Next)
+              show_line("moving to : ", CurrentMin),
               follow_min_path(CurrentMin)
           ]
         
@@ -316,17 +338,17 @@ class main(Agent):
               +runtime_path(MinPath),
               "length = len(MinPath)",
               show_line("Lunghezza array aggiornato: ", length),
-              #"index = index + 1",
               go_to_coordinates_block(Next),
               #follow_min_path(CurrentMin, index)
           ]
   
-        follow_min_path(MinPath) / (selected(CurrentMin, CurrentMinCost) & index(N) & last_index(Node)) >> \
+        follow_min_path(MinPath) / (selected(CurrentMin, CurrentMinCost) & first_index(N) & last_index(Node)) >> \
           [
               -selected(CurrentMin, CurrentMinCost),
               -runtime_path(MinPath),
               clear(),
               -last_index(Node),
+              -first_index(N),
               release(),
               +should_sense(),
               find_min_path(Node,N),
@@ -339,14 +361,15 @@ class main(Agent):
               -runtime_path(MinPath),
               -selected(CurrentMin, CurrentMinCost),
               clear(),
-              pick(N)
+              sense()
           ]
 
         go_to_coordinates_block(Next) / coordinates_node(Next, X, Y) >> \
         [
-              show_line("Vado al nodo ", Next, " con coordinate (",X,",",Y,")"),
+              #show_line("Vado al nodo ", Next, " con coordinate (",X,",",Y,")"),
               go_to_block(X, Y, -90),
-              +target(X, Y)
+              +target(X, Y),
+              +current_node(Next)
         ]
 
         #empty(color)
