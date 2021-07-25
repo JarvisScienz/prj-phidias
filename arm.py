@@ -24,7 +24,7 @@ class ThreeJointsArm:
         self.pose = Pose()
         self.alpha_vect = []
         self.captured_block = None
-
+        self.DISTANCE_FROM_BLOCK = self.element_3_model.L - Block.HEIGHT/2 - 0.001
     def set_captured_block(self, block):
         self.captured_block = block
         
@@ -37,6 +37,12 @@ class ThreeJointsArm:
         self.element_1_control.set_target(theta1)
         self.element_2_control.set_target(theta2)
         self.element_3_control.set_target(theta3)
+        
+    def set_block_pose(self, alpha, x, y):
+        if self.captured_block != None:
+            self.captured_block.set_pose(x + self.DISTANCE_FROM_BLOCK*math.cos(alpha) - Block.WIDTH/2, \
+                                         y + self.DISTANCE_FROM_BLOCK*math.sin(alpha), \
+                                         alpha + math.radians(90))
 
     def evaluate(self, delta_t):
         self.element_1_control.evaluate(delta_t)
@@ -56,11 +62,7 @@ class ThreeJointsArm:
 
         alpha = self.element_1_model.theta + self.element_2_model.theta + self.element_3_model.theta
         (x3, y3) = local_to_global(x2, y2, alpha, self.element_3_model.L, 0)
-        
-        if self.captured_block != None:
-            self.captured_block.set_pose(x3 - Block.WIDTH/2, \
-                                         y3 - self.element_3_model.L + Block.HEIGHT/2 +0.001, \
-                                         0)
+        self.set_block_pose(alpha, x3, y3)
         
         return [ (x1, y1), (x2, y2), (x3, y3) ]
 
