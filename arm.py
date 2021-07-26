@@ -119,7 +119,7 @@ class ThreeJointsArm:
         self.element_1_model.plot(0, t_vect)
         self.element_2_model.plot(2, t_vect)
         self.element_3_model.plot(4, t_vect)
-        self.plot_alpha(6, t_vect)
+        #self.plot_alpha(6, t_vect)
         
     def reset_vectors(self):
         alpha_vect = []

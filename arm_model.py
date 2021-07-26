@@ -25,7 +25,7 @@ class ArmElement:
             delta_t * _input_torque / (self.M * self.L)
         self.w_vect.append(self.w)
         self.theta = self.theta + delta_t * self.w
-        self.theta_vect.append(self.theta)
+        self.theta_vect.append(math.degrees(self.theta))
         
     def get_pose(self):
         return (self.L * math.cos(self.theta), self.L * math.sin(self.theta) )

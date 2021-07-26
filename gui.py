@@ -94,14 +94,7 @@ class MainWindow(QWidget):
     def go_to(self,target_x, target_y, target_alpha):
         self.notification = False
         self.arm.set_target_xy_a(target_x, target_y, target_alpha)
-
-    def go_to_next_block(self, target_x, target_y, target_alpha):
-        self.notification = False
-        #target_x = POSITIONS[index_position]
-        print("Target x: ", target_x)
-        self.arm.set_target_xy_a(target_x, target_y, target_alpha)
-        if self._from is not None:
-            Messaging.send_belief(self._from, 'target', [target_x, 0.02], 'robot')
+        #print("Target x: ", target_x)
 
     def generate_new_block(self):
         if self.world.count_blocks() == 6:

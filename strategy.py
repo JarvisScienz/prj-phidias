@@ -40,7 +40,6 @@ class pick(Procedure): pass
 class empty(Procedure): pass
 
 class go(Procedure): pass
-class go_to_block(Procedure): pass
 class sense(Procedure): pass
 class scan(Procedure): pass
 class _scan(Procedure): pass
@@ -92,8 +91,8 @@ def_vars('X','Y','target_y','A','_A','D', 'W', 'Gap', 'C', 'N', 'Src', 'Dest', '
 class main(Agent):
     def main(self):
         # commands
-        go(X,Y,A) >> [ +go_to(X,Y,A)[{'to': 'robot@127.0.0.1:6566'}] ]
-        go_to_block(X,Y,A) >> [ +go_to_next_block(X,Y,A)[{'to': 'robot@127.0.0.1:6566'}] ]
+        go(X,Y,A) >> [ +go_to(X,Y,A)[{'to': 'robot@127.0.0.1:6566'}],
+                       +target(X, Y)]
         generate() >> [ +new_block()[{'to': 'robot@127.0.0.1:6566'}] ]
         sense() / should_sense() >> [ +sense_distance()[{'to': 'robot@127.0.0.1:6566'}],
                      +sense_color()[{'to': 'robot@127.0.0.1:6566'}] ]
@@ -109,6 +108,7 @@ class main(Agent):
         #pick()
         pick(i) / (index(i) & eq(i, 16)) >> \
           [
+              +plot() [{'to': 'robot@127.0.0.1:6566'}],
               show_line('end')
           ]
 
@@ -120,11 +120,12 @@ class main(Agent):
         pick(i) / (index(i) & current_node(Src)) >> [
             "Dest = i + 1",  
             +index(Dest),
-            "print('from: ' + str(Src) + ' to ' + str(i))",
+            #"print('from: ' + str(Src) + ' to ' + str(i))",
             find_min_path(Src, i)
         ]
 
         pick() >> [
+            reset(),
             +index(1),
             +should_sense(),
             go_to_coordinates_block(6)
@@ -136,7 +137,7 @@ class main(Agent):
           ]
         
         next_move() / (index(i) & should_sense())>> [
-            show_line("pick ", i),
+            #show_line("pick ", i),
             pick(i)
           ]
         
@@ -327,7 +328,7 @@ class main(Agent):
               "length = len(MinPath)",
               #show_line("Lunghezza array aggiornato: ", length),
               #go_to_coordinates_node(Next)
-              show_line("moving to : ", CurrentMin),
+              #show_line("moving to : ", CurrentMin),
               follow_min_path(CurrentMin)
           ]
         
@@ -351,8 +352,7 @@ class main(Agent):
               -first_index(N),
               release(),
               +should_sense(),
-              find_min_path(Node,N),
-              +plot() [{'to': 'robot@127.0.0.1:6566'}]
+              find_min_path(Node,N)
           ]
 
         follow_min_path(MinPath) / (selected(CurrentMin, CurrentMinCost) & index(N)) >> \
@@ -367,7 +367,7 @@ class main(Agent):
         go_to_coordinates_block(Next) / coordinates_node(Next, X, Y) >> \
         [
               #show_line("Vado al nodo ", Next, " con coordinate (",X,",",Y,")"),
-              go_to_block(X, Y, -90),
+              go(X, Y, -90),
               +target(X, Y),
               +current_node(Next)
         ]
